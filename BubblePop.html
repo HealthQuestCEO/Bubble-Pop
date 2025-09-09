@@ -1,0 +1,701 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumo's Health Quest - The Game</title>
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* General Styles */
+        body {
+            /* Updated to match the light blue and green background from the images */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #A8D8D6 0%, #D4E9D9 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow: auto; /* Changed to auto to allow scrolling on smaller screens */
+        }
+        
+        /* The main game container, made to look like the pop-up cards */
+        .game-container {
+            max-width: 800px;
+            width: 90%;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        /* Header and text */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: #4A9C8D;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            color: #666;
+        }
+        
+        .lumo-avatar {
+            /* The image of Lumo the dragon */
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 15px;
+            background: url('https://i.ibb.co/C07p2mF/lumo-avatar.png') no-repeat center center; /* Replace with your image path */
+            background-size: contain;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .question-container {
+            /* Background matches the card style in the images */
+            background-color: #E4F7F5;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .question-text {
+            font-size: 1.5em;
+            color: #2D5855;
+            margin-bottom: 20px;
+        }
+
+        /* Bubbles container */
+        .bubbles-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 10px;
+            min-height: 250px;
+        }
+
+        .bubble {
+            /* General style for the bubbles */
+            min-width: 100px;
+            max-width: 150px;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .bubble:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Bubble color variations - matching the theme */
+        .bubble:nth-child(3n+1) { background: linear-gradient(45deg, #F8E5AE, #FBC96C); }
+        .bubble:nth-child(3n+2) { background: linear-gradient(45deg, #A8D8D6, #6CB2B8); }
+        .bubble:nth-child(3n)   { background: linear-gradient(45deg, #D4E9D9, #9DCC9B); }
+
+        .bubble.correct {
+            /* Light green for correct answers */
+            background: linear-gradient(45deg, #85E08B, #4CAF50);
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .bubble.incorrect {
+            /* Light red for incorrect answers */
+            background: linear-gradient(45deg, #FFA07A, #F08080);
+        }
+
+        /* Buttons and Feedback */
+        .button, .next-button {
+            background: #FFC04C; /* Soft orange from the images */
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 192, 76, 0.4);
+            margin-top: 15px;
+        }
+
+        .next-button {
+            display: none;
+            background: #90C3C1; /* Soft green from the images */
+            box-shadow: 0 4px 15px rgba(144, 195, 193, 0.4);
+        }
+        
+        .button:hover, .next-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease;
+        }
+
+        .feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .feedback.correct {
+            background-color: #E4F7F5;
+            color: #4A9C8D;
+        }
+
+        .feedback.incorrect {
+            background-color: #FFECEC;
+            color: #D25F6A;
+        }
+        
+        /* Other elements */
+        .progress-bar {
+            background-color: #E4F7F5;
+            border-radius: 5px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background-color: #A8D8D6;
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background-color: #F8F8F8;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .score-item {
+            text-align: center;
+            color: #4A9C8D;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .score-number {
+            font-size: 1.8em;
+            display: block;
+            color: #2D5855;
+        }
+
+        /* Completion Screen */
+        .completion-screen {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 600px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .completion-screen.show {
+            display: block;
+        }
+
+        .celebration {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        /* Keyframe animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .game-container {
+                margin: 20px auto;
+                padding: 20px;
+            }
+            .question-text {
+                font-size: 1.2em;
+            }
+            .bubble {
+                min-width: 80px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="lumo-avatar"></div>
+            <h1>Lumo's Health Quest Adventure!</h1>
+            <p>Help Lumo learn healthy habits by popping the correct bubbles!</p>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="score-board">
+            <div class="score-item">
+                <span class="score-number" id="score">0</span>
+                <span>Score</span>
+            </div>
+            <div class="score-item">
+                <span class="score-number" id="currentQuestion">1</span>
+                <span>Question</span>
+            </div>
+            <div class="score-item">
+                <span class="score-number" id="streak">0</span>
+                <span>Streak</span>
+            </div>
+        </div>
+        
+        <div class="question-container" id="questionContainer">
+            <div class="question-text" id="questionText">Loading...</div>
+            <div class="bubbles-container" id="bubblesContainer">
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <button class="next-button" id="nextButton">Next Question! 🎉</button>
+        </div>
+        
+        <div class="completion-screen" id="completionScreen">
+            <div class="celebration">🎉🐉🎊</div>
+            <h2>Amazing Job!</h2>
+            <p>You helped Lumo learn so much about staying healthy!</p>
+            <div id="finalStats"></div>
+            <button class="button" onclick="restartQuiz()">Play Again! 🚀</button>
+        </div>
+    </div>
+
+    <script>
+        const healthQuestions = [
+            {
+                question: "What helps Lumo have steady energy all day?",
+                answers: [
+                    { text: "Apple slices with peanut butter", correct: true },
+                    { text: "Just candy", correct: false },
+                    { text: "Energy drinks", correct: false },
+                    { text: "Nothing at all", correct: false },
+                    { text: "Only soda", correct: false }
+                ],
+                feedback: {
+                    correct: "Perfect! 🍎 Combining fruits with protein gives Lumo steady energy that lasts!",
+                    incorrect: "Oops! 😊 Lumo needs foods that work together, like apple slices with peanut butter for lasting energy!"
+                }
+            },
+            {
+                question: "When should Lumo drink water?",
+                answers: [
+                    { text: "Before feeling thirsty", correct: true },
+                    { text: "Only when very thirsty", correct: false },
+                    { text: "Just at meals", correct: false },
+                    { text: "Never during play", correct: false },
+                    { text: "Only at bedtime", correct: false }
+                ],
+                feedback: {
+                    correct: "Excellent! 💧 Lumo stays healthiest by drinking water throughout the day, not waiting until thirsty!",
+                    incorrect: "Not quite! 💧 Lumo should drink water regularly throughout the day, before getting thirsty!"
+                }
+            },
+            {
+                question: "What helps Lumo sleep better?",
+                answers: [
+                    { text: "Calm activities before bed", correct: true },
+                    { text: "Exciting video games", correct: false },
+                    { text: "Bright lights", correct: false },
+                    { text: "Big meals right before bed", correct: false },
+                    { text: "Scary movies", correct: false }
+                ],
+                feedback: {
+                    correct: "Wonderful! 😴 Calm activities help Lumo's body get ready for peaceful sleep!",
+                    incorrect: "Try again! 😴 Lumo sleeps best with calm, peaceful activities before bedtime!"
+                }
+            },
+            {
+                question: "How should Lumo handle big feelings like anger?",
+                answers: [
+                    { text: "Take deep breaths and talk to someone", correct: true },
+                    { text: "Keep feelings inside", correct: false },
+                    { text: "Yell at friends", correct: false },
+                    { text: "Ignore the feelings", correct: false },
+                    { text: "Break things", correct: false }
+                ],
+                feedback: {
+                    correct: "Great choice! 🫁 Deep breaths and talking to trusted people helps Lumo feel better!",
+                    incorrect: "Let's try again! 🫁 Lumo feels better when taking deep breaths and sharing feelings with someone who cares!"
+                }
+            },
+            {
+                question: "What makes Lumo's body feel strong and happy?",
+                answers: [
+                    { text: "Moving and playing every day", correct: true },
+                    { text: "Sitting still all day", correct: false },
+                    { text: "Never exercising", correct: false },
+                    { text: "Only sleeping", correct: false },
+                    { text: "Staying indoors always", correct: false }
+                ],
+                feedback: {
+                    correct: "Perfect! 🏃‍♂️ Moving and playing helps Lumo's body stay strong and mind stay happy!",
+                    incorrect: "Not quite! 🏃‍♂️ Lumo's body feels best when moving and playing every day!"
+                }
+            },
+            {
+                question: "What should Lumo do before eating?",
+                answers: [
+                    { text: "Wash hands with soap", correct: true },
+                    { text: "Just wipe hands on shirt", correct: false },
+                    { text: "Nothing at all", correct: false },
+                    { text: "Only rinse with water", correct: false },
+                    { text: "Use hand sanitizer once", correct: false }
+                ],
+                feedback: {
+                    correct: "Excellent! 🧼 Washing hands with soap keeps germs away from Lumo's food!",
+                    incorrect: "Not quite! 🧼 Lumo should always wash hands with soap before eating to stay healthy!"
+                }
+            },
+            {
+                question: "How many hours of sleep does Lumo need each night?",
+                answers: [
+                    { text: "8-10 hours", correct: true },
+                    { text: "4-5 hours", correct: false },
+                    { text: "2-3 hours", correct: false },
+                    { text: "12-15 hours", correct: false },
+                    { text: "Only when tired", correct: false }
+                ],
+                feedback: {
+                    correct: "Great! 🌙 8-10 hours of sleep helps Lumo's body and brain grow strong!",
+                    incorrect: "Try again! 🌙 Lumo needs 8-10 hours of sleep each night to stay healthy and alert!"
+                }
+            },
+            {
+                question: "What's the best way for Lumo to protect teeth?",
+                answers: [
+                    { text: "Brush twice daily and floss", correct: true },
+                    { text: "Only brush once a week", correct: false },
+                    { text: "Never brush teeth", correct: false },
+                    { text: "Only eat candy", correct: false },
+                    { text: "Just rinse with water", correct: false }
+                ],
+                feedback: {
+                    correct: "Perfect! 🦷 Brushing twice daily and flossing keeps Lumo's teeth strong and healthy!",
+                    incorrect: "Not quite! 🦷 Lumo's teeth stay healthiest with brushing twice daily and flossing!"
+                }
+            },
+            {
+                question: "When Lumo feels stressed, what helps most?",
+                answers: [
+                    { text: "Deep breathing and talking to someone", correct: true },
+                    { text: "Staying alone and worried", correct: false },
+                    { text: "Getting angry at others", correct: false },
+                    { text: "Eating lots of sweets", correct: false },
+                    { text: "Staying up all night", correct: false }
+                ],
+                feedback: {
+                    correct: "Wonderful! 🧘‍♂️ Deep breathing and sharing feelings helps Lumo feel calm and supported!",
+                    incorrect: "Let's try again! 🧘‍♂️ Lumo feels better with deep breaths and talking to caring people!"
+                }
+            },
+            {
+                question: "What makes Lumo's brain work its best?",
+                answers: [
+                    { text: "Eating breakfast every morning", correct: true },
+                    { text: "Skipping all meals", correct: false },
+                    { text: "Only eating sugary snacks", correct: false },
+                    { text: "Drinking energy drinks", correct: false },
+                    { text: "Not eating until dinner", correct: false }
+                ],
+                feedback: {
+                    correct: "Excellent! 🧠 A healthy breakfast gives Lumo's brain the fuel it needs to learn and think!",
+                    incorrect: "Not quite! 🧠 Lumo's brain works best when fueled with a nutritious breakfast every morning!"
+                }
+            },
+            {
+                question: "How should Lumo treat friends and family?",
+                answers: [
+                    { text: "With kindness and respect", correct: true },
+                    { text: "By ignoring them", correct: false },
+                    { text: "By being mean", correct: false },
+                    { text: "Only when they give gifts", correct: false },
+                    { text: "By always arguing", correct: false }
+                ],
+                feedback: {
+                    correct: "Beautiful! 💝 Treating others with kindness and respect makes everyone feel good and builds strong friendships!",
+                    incorrect: "Try again! 💝 Lumo's relationships grow stronger when treating others with kindness and respect!"
+                }
+            },
+            {
+                question: "What should Lumo do when feeling sad or worried?",
+                answers: [
+                    { text: "Talk to a trusted adult", correct: true },
+                    { text: "Keep it secret forever", correct: false },
+                    { text: "Get angry at everyone", correct: false },
+                    { text: "Stop eating", correct: false },
+                    { text: "Pretend nothing's wrong", correct: false }
+                ],
+                feedback: {
+                    correct: "Perfect! 🤗 Talking to trusted adults helps Lumo feel better and find solutions to problems!",
+                    incorrect: "Not quite! 🤗 Lumo feels better when sharing feelings with trusted adults who can help!"
+                }
+            },
+            {
+                question: "How often should Lumo take breaks during screen time?",
+                answers: [
+                    { text: "Every 20-30 minutes", correct: true },
+                    { text: "Never take breaks", correct: false },
+                    { text: "Only once per day", correct: false },
+                    { text: "After 5 hours straight", correct: false },
+                    { text: "Breaks aren't needed", correct: false }
+                ],
+                feedback: {
+                    correct: "Great! 📱 Taking breaks every 20-30 minutes helps Lumo's eyes and body stay healthy during screen time!",
+                    incorrect: "Try again! 📱 Lumo's eyes and body need breaks every 20-30 minutes during screen time!"
+                }
+            },
+            {
+                question: "What's the best snack for Lumo during study time?",
+                answers: [
+                    { text: "Nuts and fruits", correct: true },
+                    { text: "Chips and soda", correct: false },
+                    { text: "Only candy bars", correct: false },
+                    { text: "Energy drinks", correct: false },
+                    { text: "Nothing at all", correct: false }
+                ],
+                feedback: {
+                    correct: "Excellent! 🥜 Nuts and fruits give Lumo's brain steady energy for better learning and focus!",
+                    incorrect: "Not quite! 🥜 Lumo learns best with brain-boosting snacks like nuts and fruits!"
+                }
+            },
+            {
+                question: "How should Lumo spend time outside?",
+                answers: [
+                    { text: "Playing actively and safely", correct: true },
+                    { text: "Just sitting and doing nothing", correct: false },
+                    { text: "Only looking at phone", correct: false },
+                    { text: "Staying in the shade always", correct: false },
+                    { text: "Without any adult supervision", correct: false }
+                ],
+                feedback: {
+                    correct: "Wonderful! 🌳 Active outdoor play helps Lumo stay fit, get vitamin D, and feel happy!",
+                    incorrect: "Try again! 🌳 Lumo benefits most from active, safe outdoor play with proper supervision!"
+                }
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let questionsAnswered = 0;
+
+        function updateScoreboard() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('streak').textContent = streak;
+            
+            const progress = ((currentQuestionIndex) / healthQuestions.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function createBubble(answer, index) {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.textContent = answer.text;
+            bubble.dataset.correct = answer.correct;
+            
+            bubble.addEventListener('click', () => handleBubblePop(bubble));
+            
+            return bubble;
+        }
+
+        function handleBubblePop(bubble) {
+            const isCorrect = bubble.dataset.correct === 'true';
+            const feedback = document.getElementById('feedback');
+            const nextButton = document.getElementById('nextButton');
+            
+            // Pop animation
+            bubble.classList.add('popped');
+            
+            // Disable all bubbles
+            document.querySelectorAll('.bubble').forEach(b => {
+                b.style.pointerEvents = 'none';
+            });
+            
+            setTimeout(() => {
+                if (isCorrect) {
+                    score += 100;
+                    streak += 1;
+                    feedback.className = 'feedback correct show';
+                    feedback.textContent = healthQuestions[currentQuestionIndex].feedback.correct;
+                    
+                    // Add visual celebration
+                    createCelebrationParticles();
+                } else {
+                    streak = 0;
+                    feedback.className = 'feedback incorrect show';
+                    feedback.textContent = healthQuestions[currentQuestionIndex].feedback.incorrect;
+                    
+                    // Highlight correct answer
+                    document.querySelectorAll('.bubble').forEach(b => {
+                        if (b.dataset.correct === 'true') {
+                            b.classList.add('correct');
+                            b.style.animation = 'pulse 0.5s ease-in-out 3';
+                        }
+                    });
+                }
+                
+                updateScoreboard();
+                nextButton.style.display = 'block';
+                questionsAnswered++;
+            }, 500);
+        }
+
+        function createCelebrationParticles() {
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = Math.random() * window.innerWidth + 'px';
+                particle.style.top = Math.random() * window.innerHeight + 'px';
+                particle.style.width = '10px';
+                particle.style.height = '10px';
+                particle.style.background = ['#A8D8D6', '#D4E9D9', '#FFC04C'][Math.floor(Math.random() * 3)];
+                particle.style.borderRadius = '50%';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '1000';
+                particle.style.animation = 'float 2s ease-out forwards';
+                
+                document.body.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 2000);
+            }
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= healthQuestions.length) {
+                showCompletionScreen();
+                return;
+            }
+            
+            const question = healthQuestions[currentQuestionIndex];
+            const questionText = document.getElementById('questionText');
+            const bubblesContainer = document.getElementById('bubblesContainer');
+            const feedback = document.getElementById('feedback');
+            const nextButton = document.getElementById('nextButton');
+            
+            questionText.textContent = question.question;
+            bubblesContainer.innerHTML = '';
+            feedback.className = 'feedback';
+            feedback.textContent = '';
+            nextButton.style.display = 'none';
+            
+            // Shuffle answers to make the game more challenging
+            const shuffledAnswers = question.answers.sort(() => Math.random() - 0.5);
+            
+            // Create bubbles for each answer
+            shuffledAnswers.forEach((answer, index) => {
+                const bubble = createBubble(answer, index);
+                bubblesContainer.appendChild(bubble);
+            });
+            
+            updateScoreboard();
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('questionContainer').style.display = 'none';
+            const completionScreen = document.getElementById('completionScreen');
+            const finalStats = document.getElementById('finalStats');
+            
+            const percentage = Math.round((score / (healthQuestions.length * 100)) * 100);
+            
+            finalStats.innerHTML = `
+                <h3>Your Health Quest Results:</h3>
+                <p><strong>Final Score:</strong> ${score} points</p>
+                <p><strong>Questions Answered:</strong> ${questionsAnswered} of ${healthQuestions.length}</p>
+                <p><strong>Health Knowledge:</strong> ${percentage}%</p>
+                <p><strong>Longest Streak:</strong> ${streak} correct in a row!</p>
+                <br>
+                <p>🐉 Lumo is so proud of how much you've learned about staying healthy!</p>
+            `;
+            
+            completionScreen.classList.add('show');
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            streak = 0;
+            questionsAnswered = 0;
+            
+            document.getElementById('questionContainer').style.display = 'block';
+            document.getElementById('completionScreen').classList.remove('show');
+            
+            loadQuestion();
+        }
+
+        // Event listeners
+        document.getElementById('nextButton').addEventListener('click', nextQuestion);
+
+        // Initialize game
+        loadQuestion();
+    </script>
+</body>
+</html>
